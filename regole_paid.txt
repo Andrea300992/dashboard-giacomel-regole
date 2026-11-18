@@ -1,0 +1,79 @@
+# =========================================
+# REGOLE FONTI PAID – FILE 2 (Report Lead MKT)
+# Aggiornato il: 18/11/2026
+# Una regola per riga. Le righe che iniziano con # sono commenti.
+# Maiuscole/minuscole e spazi in più non contano.
+# Tutto ciò che non rientra in nessuna regola è ORGANICO.
+# =========================================
+
+# --- FONTI SEMPRE PAID ---
+# Il lead è paid qualunque sia il dettaglio origine
+FONTE PAID: Adkaora
+FONTE PAID: Autoscout24
+FONTE PAID: AutoUncle
+FONTE PAID: CarAffinity
+FONTE PAID: Cartono
+FONTE PAID: Cheautocompro
+FONTE PAID: Cheautocompro.it
+FONTE PAID: DIALOGO
+FONTE PAID: DriveK
+FONTE PAID: eKonsilio
+FONTE PAID: Elevatee
+FONTE PAID: Guidrive
+FONTE PAID: Hej
+FONTE PAID: Motor1
+FONTE PAID: novita.fratelligiacomel.it
+FONTE PAID: Performetrica
+FONTE PAID: Subito.it
+
+# --- DETTAGLI ORIGINE SEMPRE PAID ---
+# Il lead è paid con qualsiasi fonte (sito, sito del brand, configuratore, telefono...)
+DETTAGLIO PAID: cpl
+DETTAGLIO PAID: adssearch_youcan
+DETTAGLIO PAID: Form
+DETTAGLIO PAID: adspmax_youcan
+DETTAGLIO PAID: AUTOSCOUT
+DETTAGLIO PAID: autoscout
+DETTAGLIO PAID: AutoSuperMarket
+DETTAGLIO PAID: bdc autoscout
+DETTAGLIO PAID: Servizio: BDC Google
+DETTAGLIO PAID: google ads
+DETTAGLIO PAID: adsvehicle_youcan
+DETTAGLIO PAID: autouncle_web
+DETTAGLIO PAID: dem_avrage
+DETTAGLIO PAID: dem_rcs
+DETTAGLIO PAID: display_citynews
+DETTAGLIO PAID: ekonsilio
+DETTAGLIO PAID: native_citynews
+DETTAGLIO PAID: retargeting
+DETTAGLIO PAID: social_adv
+DETTAGLIO PAID: Facebook Lead Ads
+DETTAGLIO PAID: WhatsApp
+
+# --- COMBINAZIONI PAID: fonte | dettaglio origine ---
+# Paid solo con questa fonte, organico con le altre. Separa fonte e dettaglio con |
+FONTE+DETTAGLIO PAID: Altro | cpl
+FONTE+DETTAGLIO PAID: audi.fratelligiacomel.it | adssearch_youcan
+FONTE+DETTAGLIO PAID: AutoSuperMarket | Form
+FONTE+DETTAGLIO PAID: service.fratelligiacomel.it | adspmax_youcan
+FONTE+DETTAGLIO PAID: service.fratelligiacomel.it | adssearch_youcan
+FONTE+DETTAGLIO PAID: skoda.fratelligiacomel.it | adssearch_youcan
+FONTE+DETTAGLIO PAID: Telefono | AUTOSCOUT
+FONTE+DETTAGLIO PAID: Telefono | autoscout
+FONTE+DETTAGLIO PAID: Telefono | AutoSuperMarket
+FONTE+DETTAGLIO PAID: Telefono | bdc autoscout
+FONTE+DETTAGLIO PAID: Telefono | Servizio: BDC Google
+FONTE+DETTAGLIO PAID: WhatsApp Business | google ads
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | adspmax_youcan
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | adssearch_youcan
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | adsvehicle_youcan
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | autouncle_web
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | dem_avrage
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | dem_rcs
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | display_citynews
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | ekonsilio
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | native_citynews
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | retargeting
+FONTE+DETTAGLIO PAID: www.fratelligiacomel.it | social_adv
+FONTE+DETTAGLIO PAID: Social Network | Facebook Lead Ads
+FONTE+DETTAGLIO PAID: Social Network | WhatsApp
