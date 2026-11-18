@@ -1,12 +1,12 @@
 /*!
  * Dashboard Giacomel – motore grafico
- * Version 2.1.0 · build 2026-11-18
+ * Version 2.1.1 · build 2026-11-18
  * Developed by Andrea Carminati. All rights reserved.
  * Questo file disegna le dashboard: l'HTML generato contiene solo l'oggetto DASHBOARD con i dati.
  */
 (function () {
 "use strict";
-const ENGINE = { name: "Dashboard Giacomel", version: "2.1.0", build: "2026-11-18", minSkill: "6.1", author: "Andrea Carminati" };
+const ENGINE = { name: "Dashboard Giacomel", version: "2.1.1", build: "2026-11-18", minSkill: "6.1", author: "Andrea Carminati" };
 ENGINE.signature = `${ENGINE.name} engine v${ENGINE.version} (${ENGINE.build}) – Developed by ${ENGINE.author}`;
 if (window.DashboardGiacomel) return;
 window.DashboardGiacomel = Object.freeze(Object.assign({}, ENGINE));
@@ -538,7 +538,7 @@ function block0(b0, id) {
       return card(b, tableHtml(b.head, b.full || PRN ? v.rows : v.rows.slice(0, 6), v.total, b.hl, sid) + (!b.full && !PRN && v.rows.length > 6 ? `<p class="more">Mostrate 6 su ${v.rows.length} voci. Elenco completo in Apri tabella.</p>` : ""), (PRN ? "" : fltSw(b, id)) + `<button class="btn" data-open="${id}">Apri tabella</button>`, a); }
     case "colonne": case "barre": case "linea": case "area":
       REG.push({ id, b });
-      return card(b, `<div data-c="${id}"></div>`, (PRN ? "" : fltSw(b, id)) + (b.switch === false ? "" : switcher(id, S.views[id] || b.type, b.tipi)), a, "nt");
+      return card(b, `<div data-c="${id}"></div>`, (PRN ? "" : fltSw(b, id)) + (b.switch === false ? "" : switcher(id, S.views[id] || b.type, b.type === "area" ? b.tipi : (b.tipi || ["colonne", "barre", "linea"]).filter(t => t !== "area"))), a, "nt");
     case "anelli": return `<div class="kpis anl" style="--n:${b.n || 3}">${b.items.map(r => `<div class="card ringc" style="grid-column:${r.col || "auto"}"><div class="ct">${esc(r.title)}</div>${ringSvg(r)}</div>`).join("")}</div>`;
     case "anello":
       REG.push({ id, b });
