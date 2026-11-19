@@ -1,12 +1,12 @@
 /*!
  * Dashboard Giacomel – motore grafico
- * Version 2.1.1 · build 2026-11-18
+ * Version 2.2.0 · build 2026-11-18
  * Developed by Andrea Carminati. All rights reserved.
  * Questo file disegna le dashboard: l'HTML generato contiene solo l'oggetto DASHBOARD con i dati.
  */
 (function () {
 "use strict";
-const ENGINE = { name: "Dashboard Giacomel", version: "2.1.1", build: "2026-11-18", minSkill: "6.1", author: "Andrea Carminati" };
+const ENGINE = { name: "Dashboard Giacomel", version: "2.2.0", build: "2026-11-19", minSkill: "6.1", author: "Andrea Carminati" };
 ENGINE.signature = `${ENGINE.name} engine v${ENGINE.version} (${ENGINE.build}) – Developed by ${ENGINE.author}`;
 if (window.DashboardGiacomel) return;
 window.DashboardGiacomel = Object.freeze(Object.assign({}, ENGINE));
@@ -24,6 +24,7 @@ var BRAND = {
   cupra: { nome: "CUPRA", conc: ["Lombarda", "Eurocar", "Busto Motor Company", "Wendecar"], modelli: ["Born", "Formentor", "Leon", "Ateca", "Terramar", "Tavascan", "Raval", "Ibiza", "Arona", "Tarraco"] },
   seat: { nome: "SEAT", conc: ["Lombarda", "Eurocar", "Busto Motor Company", "Wendecar"], modelli: ["Ibiza", "Arona", "Leon", "Ateca", "Tarraco", "Born", "Formentor", "Terramar", "Tavascan", "Raval"] },
   skoda: { nome: "Skoda", conc: ["Rigoldi", "Autocogliati", "Autoarona", "Bossoni"], modelli: ["Fabia", "Scala", "Kamiq", "Karoq", "Kodiaq", "Octavia", "Superb", "Enyaq", "Elroq", "Epiq", "Peaq"] },
+  vic: { nome: "Volkswagen Veicoli Commerciali", conc: [], modelli: ["Caddy", "Caddy Cargo", "Caddy California", "Transporter", "Multivan", "California", "Grand California", "ID. Buzz", "ID. Buzz Cargo", "Crafter", "Amarok"] },
   volkswagen: { nome: "Volkswagen", conc: ["Rigoldi", "Sesto", "Lombarda", "Martignoni"], modelli: ["Polo", "T-Cross", "Taigo", "T-Roc", "Golf", "ID.3", "ID.4", "ID.5", "ID.7", "ID. Buzz", "Tiguan", "Tayron", "Touareg", "Passat", "Multivan"] },
   apsp: { nome: "APSP", conc: ["Lombarda", "Sesto", "Eurocar"], modelli: null },
   usato: { nome: "Usato", conc: ["BeBeep", "Eurocar", "Ninicar"], modelli: null }
@@ -252,7 +253,17 @@ function costruisci(DATI, testoRegole) {
 
   return { period: BN + " · " + MeseN + " " + anno, thanks: "", brand: "grafite", accent: "arancio",
     generatore: "dashboard-mensile-giacomel v" + DATI.skill, skill: DATI.skill,
-    tabs: [cap1_, cap2_, cap3_, cap4_, cap5_, cap6_] };
+    tabs: (function () {
+      var pres = Array.isArray(DATI.file) ? DATI.file : ["paid", "lead", "prev", "promo"];
+      var parti = [["paid", [cap1_, cap2_], "File 1 Paid", "Paid mese e trimestre"], ["lead", [cap3_, cap4_], "File 2 Report Lead", "Organico mese e trimestre"],
+        ["prev", [cap5_], "File 3 Report Preventivi", "Preventivi"], ["promo", [cap6_], "File 4 Promozioni", "Concorrenza"]];
+      var tabs = [], manca = [];
+      parti.forEach(function (x) { if (pres.indexOf(x[0]) >= 0) tabs = tabs.concat(x[1]); else manca.push(x); });
+      if (!tabs.length) throw new Error("nessun file nei dati");
+      if (manca.length) tabs[0].blocks.unshift({ type: "avviso", text: "Dashboard parziale: non " + (manca.length === 1 ? "è stato caricato il " : "sono stati caricati: ") +
+        manca.map(function (x) { return x[2]; }).join(", ") + ", quindi " + (manca.reduce(function (s, x) { return s + x[1].length; }, 0) === 1 ? "manca il capitolo " : "mancano i capitoli ") + manca.map(function (x) { return x[3]; }).join(", ") + "." });
+      return tabs;
+    })() };
 }
 
 return { costruisci: costruisci, leggiRegole: leggiRegole, BRAND: BRAND, MESI: MESI };
