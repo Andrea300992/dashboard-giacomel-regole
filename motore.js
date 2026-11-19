@@ -1,12 +1,12 @@
 /*!
  * Dashboard Giacomel – motore grafico
- * Version 2.2.0 · build 2026-11-18
+ * Version 2.2.1 · build 2026-11-18
  * Developed by Andrea Carminati. All rights reserved.
  * Questo file disegna le dashboard: l'HTML generato contiene solo l'oggetto DASHBOARD con i dati.
  */
 (function () {
 "use strict";
-const ENGINE = { name: "Dashboard Giacomel", version: "2.2.0", build: "2026-11-19", minSkill: "6.1", author: "Andrea Carminati" };
+const ENGINE = { name: "Dashboard Giacomel", version: "2.2.1", build: "2026-11-19", minSkill: "6.1", author: "Andrea Carminati" };
 ENGINE.signature = `${ENGINE.name} engine v${ENGINE.version} (${ENGINE.build}) – Developed by ${ENGINE.author}`;
 if (window.DashboardGiacomel) return;
 window.DashboardGiacomel = Object.freeze(Object.assign({}, ENGINE));
@@ -260,8 +260,6 @@ function costruisci(DATI, testoRegole) {
       var tabs = [], manca = [];
       parti.forEach(function (x) { if (pres.indexOf(x[0]) >= 0) tabs = tabs.concat(x[1]); else manca.push(x); });
       if (!tabs.length) throw new Error("nessun file nei dati");
-      if (manca.length) tabs[0].blocks.unshift({ type: "avviso", text: "Dashboard parziale: non " + (manca.length === 1 ? "è stato caricato il " : "sono stati caricati: ") +
-        manca.map(function (x) { return x[2]; }).join(", ") + ", quindi " + (manca.reduce(function (s, x) { return s + x[1].length; }, 0) === 1 ? "manca il capitolo " : "mancano i capitoli ") + manca.map(function (x) { return x[3]; }).join(", ") + "." });
       return tabs;
     })() };
 }
