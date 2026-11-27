@@ -1,12 +1,12 @@
 /*!
  * Dashboard Giacomel – motore grafico
- * Version 3.3.3 · build 2026-11-23
+ * Version 3.3.4 · build 2026-11-27
  * Developed by Andrea Carminati. All rights reserved.
  * Questo file disegna le dashboard: l'HTML generato contiene solo l'oggetto DASHBOARD con i dati.
  */
 (function () {
 "use strict";
-const ENGINE = { name: "Dashboard Giacomel", version: "3.3.3", build: "2026-11-23", minSkill: "6.1", author: "Andrea Carminati" };
+const ENGINE = { name: "Dashboard Giacomel", version: "3.3.4", build: "2026-11-27", minSkill: "6.1", author: "Andrea Carminati" };
 ENGINE.signature = `${ENGINE.name} engine v${ENGINE.version} (${ENGINE.build}) – Developed by ${ENGINE.author}`;
 if (window.DashboardGiacomel) return;
 window.DashboardGiacomel = Object.freeze(Object.assign({}, ENGINE));
@@ -122,8 +122,9 @@ function costruisci(DATI, testoRegole) {
       { label: "Preventivi", value: intero(tot.p), suffix: "(" + pct(tot.p, tot.q) + ")", note: "% sui qualificati", anello: [tot.p, tot.q, pct(tot.p, tot.q)] }] },
     { type: "cols", blocks: [
       { id: "paid-mese.lead-fonte", type: "colonne", tipi: ["colonne", "barre", "riempimento", "torta", "segmenti"], title: "Lead e qualificati per fonte", series: ["Lead", "Qualificati"], data: FONTI.map(function (f) { return { name: f, Lead: a[f].l, Qualificati: a[f].q }; }) },
-      { id: "paid-mese.cpl-fonte", type: "barre", tipi: ["barre", "colonne", "bolle"], title: "CPL per fonte", note: "Nota: Nella fonte Google Ads vengono conteggiati solo i lead da Form.",
-        data: FONTI.map(function (f) { var c = cpl(a[f].sp, a[f].l); return { name: f, value: c[1], display: c[0] }; }) }] },
+      { id: "paid-mese.cpl-fonte", type: "bolle", tipi: ["bolle", "barre", "colonne"], title: "Qualificati per fonte", centro: "Google Ads", note: "Nota: Nella fonte Google Ads vengono conteggiati solo i lead da Form.",
+        data: (function () { var fq = FONTI.filter(function (f) { return a[f].l > 0; }); return (fq.length ? fq : FONTI).map(function (f) { return { name: f, value: a[f].l ? hu(a[f].q * 1000, a[f].l) : 0, display: pct(a[f].q, a[f].l) }; }); })(),
+        alt: { title: "CPL per fonte", data: FONTI.map(function (f) { var c = cpl(a[f].sp, a[f].l); return { name: f, value: c[1], display: c[0] }; }) } }] },
     { type: "table", title: "Dettaglio per fonte", subtitle: MeseN + " " + anno, head: ["Fonte", "Spesa", "Lead", "Qualificati", "% qualificati", "Preventivi", "% preventivi", "CPL"],
       rows: FONTI.map(function (f) { return r8(f, a[f]); }), total: r8("TOTALE", tot) }] };
 
@@ -470,29 +471,80 @@ function pack(items, gap) {
   });
   return placed;
 }
+function attorno(items, centro) {
+  const c = items.map(d => Object.assign({}, d, { r: Math.sqrt(Math.max(d.v, 0.01)) * 10 })).sort((a, b) => b.r - a.r);
+  const rMin = c[0].r * 0.3; c.forEach(d => { d.cr = Math.max(d.r, rMin); });
+  const A = c.find(d => d.n === centro) || c[0], altri = c.filter(d => d !== A), placed = [A];
+  const free = (x, y, r) => placed.every(p => Math.hypot(p.x - x, p.y - y) >= p.cr + r - 0.01);
+  A.x = 0; A.y = 0;
+  altri.forEach((d, i) => {
+    if (i === 0) { d.x = 0; d.y = A.cr + d.cr; placed.push(d); return; }
+    const dx = i % 2 ? 1 : -1, m = placed.reduce((s, p) => s + p.cr * p.cr, 0);
+    const gx = placed.reduce((s, p) => s + p.x * p.cr * p.cr, 0) / m, gy = placed.reduce((s, p) => s + p.y * p.cr * p.cr, 0) / m, cand = [];
+    for (let i1 = 0; i1 < placed.length; i1++) {
+      const P1 = placed[i1];
+      for (let k = 0; k < 72; k++) { const a = k * Math.PI / 36; cand.push([P1.x + Math.cos(a) * (P1.cr + d.cr), P1.y + Math.sin(a) * (P1.cr + d.cr)]); }
+      for (let j = i1 + 1; j < placed.length; j++) {
+        const Q = placed[j], ra = P1.cr + d.cr, rb = Q.cr + d.cr, ex = Q.x - P1.x, ey = Q.y - P1.y, D = Math.hypot(ex, ey);
+        if (D > ra + rb || D < Math.abs(ra - rb) || D === 0) continue;
+        const kk = (ra * ra - rb * rb + D * D) / (2 * D), h = Math.sqrt(Math.max(0, ra * ra - kk * kk)), mx = P1.x + ex * kk / D, my = P1.y + ey * kk / D;
+        cand.push([mx + h * ey / D, my - h * ex / D], [mx - h * ey / D, my + h * ex / D]);
+      }
+    }
+    let best = null;
+    cand.forEach(([x, y]) => {
+      if (!free(x, y, d.cr)) return;
+      const s = Math.hypot(x - A.x, y - A.y) + 0.35 * Math.hypot(x - gx, y - gy) + ((x - gx) * dx >= 0 ? 0 : 1e6);
+      if (!best || s < best.s - 1e-6) best = { x, y, s };
+    });
+    d.x = best ? best.x : 0; d.y = best ? best.y : 0; placed.push(d);
+  });
+  return placed;
+}
+const TONI = [72, 56, 44, 34, 26, 20];
 function segCirc(x1, y1, x2, y2, c) {
   const dx = x2 - x1, dy = y2 - y1, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((c.x - x1) * dx + (c.y - y1) * dy) / L));
   return Math.hypot(x1 + t * dx - c.x, y1 + t * dy - c.y) < c.r - 1;
 }
-function bubbleSvg(b) {
-  const W = 760, H = 360, P = 34, gs = b.groups || [];
-  const pts = pack(b.data.map(d => ({ n: d.name, v: +d.value || 0, d: d.display, g: typeof d.group === "number" ? d.group : Math.max(0, gs.indexOf(d.group)) })), 0);
+function bubbleSvg(b, Wel) {
+  const W = Math.max(420, Math.round(Wel || 760)), H = 340, P = 24, gs = b.groups || [];
+  const it = b.data.map(d => ({ n: d.name, v: +d.value || 0, d: d.display, g: typeof d.group === "number" ? d.group : Math.max(0, gs.indexOf(d.group)) }));
+  const pts = b.centro ? attorno(it, b.centro) : pack(it, 0);
+  pts.slice().sort((x, y) => y.v - x.v).forEach((p, i) => { p.ton = TONI[Math.min(i, TONI.length - 1)]; });
   const minX = Math.min(...pts.map(p => p.x - p.cr)), maxX = Math.max(...pts.map(p => p.x + p.cr)), minY = Math.min(...pts.map(p => p.y - p.cr)), maxY = Math.max(...pts.map(p => p.y + p.cr));
-  const k = Math.min((W - P * 2 - 200) / (maxX - minX), (H - P * 2) / (maxY - minY)), ox = W / 2 - (minX + maxX) / 2 * k, oy = H / 2 - (minY + maxY) / 2 * k;
-  const C = pts.map(p => ({ p, x: ox + p.x * k, y: oy + p.y * k, r: p.cr * k, lab: p.d ? esc(p.d) : fmt(p.v) }));
+  const uni = false, txt = p => String(p.d || fmt(p.v));
+  const dentro = (p, r) => {
+    const v = txt(p), fv = Math.min(r * 0.46, 34, 1.66 * r / (v.length * 0.62));
+    if (fv < 15) return 0;
+    const sp = p.n.indexOf(" ", Math.floor(p.n.length / 2) - 3), opz = [[p.n]];
+    if (p.n.includes(" ")) { const i = sp > 0 ? sp : p.n.indexOf(" "); opz.push([p.n.slice(0, i), p.n.slice(i + 1)]); }
+    for (const L of opz) {
+      const fn = Math.min(14, Math.max(11, fv * 0.42), 1.6 * r / (Math.max(...L.map(x => x.length)) * 0.58));
+      if (fn >= 10.5 && fv * 0.8 + 6 + L.length * fn * 1.2 <= 1.55 * r) return { fv: fv * 0.85, fn: fn * 0.85, righe: L };
+    }
+    return 0;
+  };
+  const lw = p => (uni ? txt(p).length * 7.6 : Math.max(String(p.d || fmt(p.v)).length * 8.2, String(p.n).length * 6.4)) + 26;
+  const kL = (res) => Math.min((W - P * 2 - res) / (maxX - minX), (H - P * 2) / (maxY - minY));
+  let k = kL(0);
+  for (let it2 = 0; it2 < 3; it2++) { const fuori = pts.filter(p => !dentro(p, p.cr * k)); k = kL(fuori.length ? Math.min(W * 0.45, 2 * Math.max(...fuori.map(lw))) : 0); }
+  const ox = W / 2 - (minX + maxX) / 2 * k, oy = H / 2 - (minY + maxY) / 2 * k;
+  const C = pts.map(p => ({ p, x: ox + p.x * k, y: oy + p.y * k, r: p.cr * k, lab: esc(txt(p)) }));
   const gx = C.reduce((a, c) => a + c.x, 0) / C.length, gy = C.reduce((a, c) => a + c.y, 0) / C.length;
   let g = "", t = "";
   const boxes = [], hit = (bx) => bx.x0 < 4 || bx.x1 > W - 4 || bx.y0 < 4 || bx.y1 > H - 4 ||
     C.some(c => { const nx = Math.max(bx.x0, Math.min(c.x, bx.x1)), ny = Math.max(bx.y0, Math.min(c.y, bx.y1)); return Math.hypot(nx - c.x, ny - c.y) < c.r + 3; }) ||
     boxes.some(o => bx.x0 < o.x1 && bx.x1 > o.x0 && bx.y0 < o.y1 && bx.y1 > o.y0);
   C.forEach(c => {
-    const tc = c.p.g === 0 ? "#fff" : "#1f2937";
-    g += `<g class="bz"><title>${esc(c.p.n)}: ${c.lab}</title><circle cx="${c.x}" cy="${c.y}" r="${c.r}" style="fill:${c.p.g === 0 ? "var(--a1)" : "var(--a2)"};stroke:var(--card)" stroke-width="2.5"/>`;
-    const fs = Math.max(11, Math.min(16, c.r / 4.2)), lw = String(c.p.d || fmt(c.p.v)).length * fs * 1.9 * 0.6;
-    if (c.r >= 50 && lw < c.r * 1.8) {
-      g += `<text x="${c.x}" y="${c.y - fs * 0.15}" text-anchor="middle" fill="${tc}" font-size="${fs * 1.9}" font-weight="700">${c.lab}</text><text x="${c.x}" y="${c.y + fs * 1.25}" text-anchor="middle" fill="${tc}" fill-opacity=".9" font-size="${fs * 0.8}" font-weight="500">${esc(c.p.n)}</text>`;
+    const base = c.p.g === 0 ? "var(--a1)" : "var(--a2)";
+    g += `<g class="bz"><title>${uni ? c.lab : esc(c.p.n) + ": " + c.lab}</title><circle cx="${c.x}" cy="${c.y}" r="${c.r}" style="fill:color-mix(in srgb,${base} ${c.p.ton}%,var(--card));stroke:${base}" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+    const di = dentro(c.p, c.r), f = di && di.f;
+    if (di) {
+      const hh = di.fv * 0.74 + 6 + di.righe.length * di.fn * 1.18, y0 = c.y - hh / 2 + di.fv * 0.74;
+      g += `<text x="${c.x}" y="${y0}" text-anchor="middle" style="fill:var(--title)" font-size="${di.fv}" font-weight="700">${c.lab}</text>` +
+        di.righe.map((x, i) => `<text x="${c.x}" y="${y0 + 6 + (i + 0.9) * di.fn * 1.18}" text-anchor="middle" style="fill:var(--title)" fill-opacity=".9" font-size="${di.fn}" font-weight="500">${esc(x)}</text>`).join("");
     } else {
-      const w = Math.max(String(c.p.d || fmt(c.p.v)).length * 8.2, String(c.p.n).length * 6.4) + 4, h = 32;
+      const w = (uni ? txt(c.p).length * 7.6 : Math.max(String(c.p.d || fmt(c.p.v)).length * 8.2, String(c.p.n).length * 6.4)) + 4, h = uni ? 20 : 32;
       const a0 = Math.atan2(c.y - gy, c.x - gx || 0.001);
       let best = null;
       cerca: for (const dist of [14, 34, 58, 84]) for (const da of [0, 0.4, -0.4, 0.8, -0.8, 1.2, -1.2, 1.6, -1.6, 2.2, -2.2, Math.PI]) {
@@ -503,11 +555,11 @@ function bubbleSvg(b) {
       if (!best) { const ux = 1, ay = c.y; best = { ux, uy: 0, ax: c.x + c.r + 14, ay, right: true, bx: { x0: c.x + c.r + 18, x1: c.x + c.r + 18 + w, y0: ay - 16, y1: ay + 16 } }; }
       boxes.push(best.bx);
       const tx = best.right ? best.bx.x0 : best.bx.x1, an = best.right ? "start" : "end";
-      t += `<line x1="${c.x + best.ux * c.r}" y1="${c.y + best.uy * c.r}" x2="${best.ax}" y2="${best.ay}" style="stroke:var(--sub)"/><text x="${tx}" y="${best.ay - 2}" text-anchor="${an}" style="fill:var(--title)" font-size="13" font-weight="700">${c.lab}</text><text x="${tx}" y="${best.ay + 13}" text-anchor="${an}" style="fill:var(--sub)" font-size="11">${esc(c.p.n)}</text>`;
+      t += `<line x1="${c.x + best.ux * c.r}" y1="${c.y + best.uy * c.r}" x2="${best.ax}" y2="${best.ay}" style="stroke:var(--sub)"/>${uni ? `<text x="${tx}" y="${best.ay + 4.5}" text-anchor="${an}" style="fill:var(--title)" font-size="13" font-weight="700">${c.lab}</text>` : `<text x="${tx}" y="${best.ay - 2}" text-anchor="${an}" style="fill:var(--title)" font-size="11" font-weight="700">${c.lab}</text><text x="${tx}" y="${best.ay + 11}" text-anchor="${an}" style="fill:var(--sub)" font-size="9.5">${esc(c.p.n)}</text>`}`;
     }
     g += "</g>";
   });
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:340px">${g}${t}</svg>${legend(gs.length ? gs : null)}`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:${H}px">${g}${t}</svg>${legend(gs.length ? gs : null)}`;
 }
 function roundPoly(P, r) {
   const n = P.length; let d = "";
@@ -590,15 +642,20 @@ function tableHtml(head, rows, total, hl, sid) {
 }
 const card = (b, inner, action, a, nc) => `<div class="card"${a}>${b.title || action ? `<div class="ch"><div><div class="ct">${esc(b.title || "")}</div>${b.subtitle ? `<div class="cs">${esc(b.subtitle)}</div>` : ""}</div>${action ? `<div class="cha">${action}</div>` : ""}</div>` : ""}${inner}${b.note ? `<p class="${nc || "cn"}">${esc(b.note)}</p>` : ""}</div>`;
 const kpi = k => `<div class="kpi${k.highlight ? " hl" : ""}"${acc(k.accent)}><span class="kl">${esc(k.label)}</span><div class="kvw"><span class="kv">${esc(k.value)}${k.suffix ? `<small>${esc(k.suffix)}</small>` : ""}</span></div>${k.delta ? `<span class="kd${k.good === true ? " ok" : k.good === false ? " ko" : ""}">${k.trend === "up" ? "↑ " : k.trend === "down" ? "↓ " : ""}${esc(k.delta)}</span>` : ""}${k.note ? `<span class="kn">${esc(k.note)}</span>` : ""}</div>`;
-const switcher = (id, v, tipi) => { const op = [["colonne", "Colonne"], ["barre", "Barre"], ["linea", "Linea"], ["area", "Area"]].filter(([k]) => isArr(tipi) ? tipi.includes(k) : k !== "area"); return op.length < 2 ? "" : `<div class="sw3">${op.map(([k, l]) => `<button data-sw="${id}" data-v="${k}" class="${v === k ? "on" : ""}">${l}</button>`).join("")}</div>`; };
+const switcher = (id, v, tipi, bz) => { const op = [["bolle", "Bolle"], ["colonne", "Colonne"], ["barre", "Barre"], ["linea", "Linea"], ["area", "Area"]].filter(([k]) => k !== "bolle" || bz).filter(([k]) => isArr(tipi) ? tipi.includes(k) : k !== "area"); return op.length < 2 ? "" : `<div class="sw3">${op.map(([k, l]) => `<button data-sw="${id}" data-v="${k}" class="${v === k ? "on" : ""}">${l}</button>`).join("")}</div>`; };
 
 function block(b0, id) {
   const bad = check(b0);
   if (bad) return errBox(id, bad);
   try { return block0(b0, id); } catch (e) { return errBox(id, "errore di disegno: " + e.message); }
 }
+function vistaDi(b, id) {
+  if (!b || !b.alt) return b;
+  const v = (b.switch === false ? b.type : S.views[id]) || b.type;
+  return v === "bolle" ? b : Object.assign({}, b, b.alt, { alt: b.alt });
+}
 function block0(b0, id) {
-  const b = norm(b0), a = acc(b.accent);
+  const b = norm(vistaDi(b0, id)), a = acc(b.accent);
   switch (b.type) {
     case "kpi": return `<div class="kpis" style="--n:${Math.max(3, b.items.length)}">${b.items.map(kpi).join("")}</div>`;
     case "heading": return `<h2 class="hd"${a}>${esc(b.text)}</h2>`;
@@ -610,14 +667,14 @@ function block0(b0, id) {
       return card(b, isArr(b.imbuto) && v.total ? `<div class="tfun${b.head.length >= 10 ? " larga" : ""}" style="--fw:${S.fw}px"><div class="tfg"><div class="tfl">${tb}</div>${PRN ? "" : `<div class="tfh" title="Trascina per allargare o stringere l'imbuto · doppio clic per tornare alla misura iniziale"><i></i></div>`}<div class="tfr">${funnelSvg(b.imbuto.map(i => ({ n: b.head[i], v: numVal(v.total[i]) || 0 })), fo && !TUTTE(fo) ? fo : "Tutte le fonti")}</div></div></div>` : tb, (PRN ? "" : fltSw(b, id)) + `<button class="btn" data-open="${id}">Apri tabella</button>`, a); }
     case "colonne": case "barre": case "linea": case "area":
       REG.push({ id, b });
-      return card(b, `<div data-c="${id}"></div>`, (PRN ? "" : fltSw(b, id)) + (b.switch === false ? "" : switcher(id, S.views[id] || b.type, b.type === "area" ? b.tipi : (b.tipi || ["colonne", "barre", "linea"]).filter(t => t !== "area"))), a, "gnt");
+      return card(b, `<div data-c="${id}"></div>`, (PRN ? "" : fltSw(b, id)) + (b.switch === false ? "" : switcher(id, S.views[id] || b.type, b.type === "area" ? b.tipi : (b.tipi || ["colonne", "barre", "linea"]).filter(t => t !== "area"), !!b.alt)), a, "gnt");
     case "anelli": return `<div class="kpis anl" style="--n:${b.n || 3}">${b.items.map(r => `<div class="card ringc" style="grid-column:${r.col || "auto"}"><div class="ct">${esc(r.title)}</div>${ringSvg(r)}</div>`).join("")}</div>`;
     case "anello":
       REG.push({ id, b });
       return card(Object.assign({}, b, { note: undefined }), `<div data-c="${id}"></div>`, "", a);
     case "bolle": case "torta": case "segmenti": case "riempimento":
       REG.push({ id, b });
-      return card(b, `<div data-c="${id}"></div>`, PRN ? "" : fltSw(b, id), a, "gnt");
+      return card(b, `<div data-c="${id}"></div>`, PRN ? "" : fltSw(b, id) + (b.alt && b.switch !== false ? switcher(id, S.views[id] || b.type, b.tipi, true) : ""), a, "gnt");
     case "evidenza": {
       const max = Math.max(...b.rows.map(r => +r.value || 0)) || 1;
       return `<div class="card dark"${a}>${b.title ? `<div class="ch"><div class="ct">${esc(b.title)}</div></div>` : ""}<div class="hb">${b.rows.map(r => `<div class="hr"><span class="hn">${esc(r.name)}</span><div class="hbs"><div class="ht"><div class="hf" style="width:${Math.max(1.5, (+r.value || 0) / max * 100)}%;background:var(--a1)"></div></div></div><span class="hv">${r.display ? esc(r.display) : fmt(r.value)}</span></div>`).join("")}</div></div>`;
@@ -640,7 +697,7 @@ function disegna(t, b, W, id) {
   if (t === "colonne") return colSvg(b, W);
   if (t === "linea" || t === "area") return lineSvg(b, W, id, t === "area");
   if (t === "barre") return barHtml(b);
-  if (t === "bolle") return bubbleSvg(b.series ? Object.assign({}, b, { series: undefined, data: valori(b) }) : b);
+  if (t === "bolle") return bubbleSvg(b.series ? Object.assign({}, b, { series: undefined, data: valori(b) }) : b, W);
   if (t === "anello") return ringSvg(b);
   if (t === "torta") return pieSvg(b);
   if (t === "segmenti") return segHtml(b);
@@ -1055,7 +1112,7 @@ function converti(b, tipo) {
   if (b.type === "classifica" && tipo !== "classifica" && !(b.data || []).length) return b;
   if (b.type === "classifica" && tipo !== "classifica") { const nd = b.data.filter(d => d.name !== "N/D"); if (nd.length) b.data = nd; delete b.style; }
   if (b.series && ["torta", "segmenti", "bolle"].includes(tipo)) b.subtitle = [b.subtitle, "quote calcolate su: " + b.series[0].toLowerCase()].filter(Boolean).join(" · ");
-  if (!CARTESIANI.includes(tipo)) b.switch = false;
+  if (!CARTESIANI.includes(tipo) && !(b.alt && tipo === "bolle")) b.switch = false;
   if (["torta", "segmenti"].includes(tipo)) delete b.maxRighe;
   b.type = tipo;
   return b;
